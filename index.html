@@ -2,88 +2,100 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 确保网页在手机端完美自适应、不缩放 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Our Memory</title>
     <style>
-        /* 基础样式重置 */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        /* 网页背景：高级深蓝暗调，完美契合视频色彩 */
         body {
             background-color: #0b1528; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            flex-direction: column;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            overflow: hidden;
-            padding: 20px;
         }
 
-        /* 视频外层毛玻璃质感容器 */
-        .video-wrapper {
+        /* 核心容器：用于处理旋转逻辑 */
+        .main-container {
             width: 100%;
-            max-width: 400px; /* 限制最大宽度，完美适配手机竖屏 */
-            background: rgba(255, 255, 255, 0.03);
-            padding: 12px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
-        /* 视频本身样式 */
+        /* 视频样式 */
         video {
-            width: 100%;
-            display: block;
-            border-radius: 16px;
-            object-fit: cover;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            background: #000;
         }
 
-        /* 视频下方的文字装饰 */
-        .subtitle {
-            color: #799fcb;
-            margin-top: 18px;
-            font-size: 14px;
-            text-align: center;
-            letter-spacing: 2px;
-            font-weight: 300;
-            opacity: 0.8;
-            animation: fadeIn 2s ease;
+        /* --- 竖屏模式下的样式（强制横屏核心） --- */
+        @media screen and (orientation: portrait) {
+            video {
+                /* 竖屏时，将视频逆时针旋转90度，使其横过来 */
+                transform: rotate(90deg);
+                /* 这里的宽度和高度需要对调计算，确保横过来后能撑满屏幕高度 */
+                width: 100vh; 
+                height: 100vw;
+                object-fit: contain; 
+            }
+            
+            /* 竖屏时的文字提示（也会跟着旋转） */
+            .tip-text {
+                position: absolute;
+                color: rgba(121, 159, 203, 0.6);
+                font-size: 12px;
+                letter-spacing: 2px;
+                transform: rotate(90deg);
+                bottom: 20px;
+                white-space: nowrap;
+            }
         }
 
-        /* 简单的文字淡入动画 */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 0.8; transform: translateY(0); }
+        /* --- 横屏模式下的样式（当用户真的横放手机时） --- */
+        @media screen and (orientation: landscape) {
+            video {
+                transform: none;
+                width: 100vw;
+                height: 100vh;
+                object-fit: contain;
+            }
+            .tip-text {
+                display: none; /* 横屏时隐藏提示 */
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- 核心网页内容 -->
-    <div class="video-wrapper">
-        <!-- 
-            controls: 显示播放暂停进度条
-            autoplay: 自动播放尝试
-            loop: 循环播放
-            playsinline & webkit-playsinline: 防止 iOS 微信或 Safari 自动全屏弹出播放
-        -->
-        <video controls autoplay loop playsinline webkit-playsinline>
+    <div class="main-container">
+        <video id="myVideo" autoplay loop muted playsinline webkit-playsinline>
             <source src="77memory.mp4" type="video/mp4">
             您的浏览器不支持 HTML5 视频播放。
         </video>
         
-        <!-- 这里可以改成你喜欢的任意句子、名字或纪念日 -->
-        <div class="subtitle">77 happy brithday!🎂.</div>
+        <div class="tip-text">Tired of my emotions. 🔄 建议横屏观看</div>
     </div>
+
+    <script>
+        // 这是一个贴心的优化小脚本：
+        // 虽然系统强制静音了才能自动播放，但只要用户在页面上任意地方点一下，就自动开启声音
+        document.addEventListener('click', function() {
+            var video = document.getElementById('myVideo');
+            if (video.muted) {
+                video.muted = false; // 解除静音
+            }
+        }, { once: true }); // 只触发一次
+    </script>
 
 </body>
 </html>
