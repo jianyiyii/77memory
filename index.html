@@ -12,7 +12,7 @@
             padding: 0;
         }
 
-        /* 网页背景：换成超温柔的星空粉蓝渐变暗调，治愈又可爱 */
+        /* 网页背景：超温柔的星空粉蓝渐变暗调，治愈又可爱 */
         body {
             background: linear-gradient(135deg, #121b2d 0%, #1a1c3a 50%, #2a1b35 100%);
             display: flex;
@@ -57,4 +57,96 @@
         /* 下方的萌系文字区域 */
         .footer-text {
             margin-top: 16px;
-            text-
+            text-align: center;
+        }
+
+        /* 主标题：带一点点粉蓝发光 */
+        .main-title {
+            color: #ffccd5;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 6px;
+            text-shadow: 0 0 8px rgba(255, 204, 213, 0.6);
+        }
+
+        /* 副标题：复刻视频文案 */
+        .subtitle {
+            color: #a5c3f3;
+            font-size: 12px;
+            letter-spacing: 1px;
+            font-weight: 300;
+            opacity: 0.8;
+        }
+
+        /* 悬浮提示小气泡（点击开启声音） */
+        .audio-tip {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            animation: pulse 2s infinite;
+            cursor: pointer;
+        }
+
+        /* 卡片上下浮动的治愈系动画 */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* 提示文字呼吸灯动画 */
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        <div class="video-box">
+            <video autoplay loop muted playsinline webkit-playsinline>
+                <source src="77memory.mp4" type="video/mp4">
+                您的浏览器不支持 HTML5 视频播放。
+            </video>
+        </div>
+        
+        <div class="footer-text">
+            <div class="main-title"> Our Memory 🤍 </div>
+            <div class="subtitle">Tired of my emotions.</div>
+        </div>
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="backmusic.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="audio-tip">🎵 戳一戳屏幕，唤醒背景音乐</div>
+
+    <script>
+        // 当用户点击页面的任何地方时，触发音频播放
+        document.addEventListener('click', function() {
+            var music = document.getElementById('bgMusic');
+            
+            // 播放音频
+            if (music.paused) {
+                music.play().catch(function(error) {
+                    console.log("音频播放失败:", error);
+                });
+            }
+            
+            // 成功播放后，隐藏下方的提示气泡
+            var tip = document.querySelector('.audio-tip');
+            if(tip) tip.style.display = 'none';
+        }, { once: true }); // once: true 确保该点击事件只在第一次点击时触发
+    </script>
+
+</body>
+</html>
