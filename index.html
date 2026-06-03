@@ -1,1 +1,89 @@
-<source src="77memory.mp4" type="video/mp4">
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 确保网页在手机端完美自适应、不缩放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Memory</title>
+    <style>
+        /* 基础样式重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 网页背景：高级深蓝暗调，完美契合视频色彩 */
+        body {
+            background-color: #0b1528; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* 视频外层毛玻璃质感容器 */
+        .video-wrapper {
+            width: 100%;
+            max-width: 400px; /* 限制最大宽度，完美适配手机竖屏 */
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        /* 视频本身样式 */
+        video {
+            width: 100%;
+            display: block;
+            border-radius: 16px;
+            object-fit: cover;
+        }
+
+        /* 视频下方的文字装饰 */
+        .subtitle {
+            color: #799fcb;
+            margin-top: 18px;
+            font-size: 14px;
+            text-align: center;
+            letter-spacing: 2px;
+            font-weight: 300;
+            opacity: 0.8;
+            animation: fadeIn 2s ease;
+        }
+
+        /* 简单的文字淡入动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 0.8; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 核心网页内容 -->
+    <div class="video-wrapper">
+        <!-- 
+            controls: 显示播放暂停进度条
+            autoplay: 自动播放尝试
+            loop: 循环播放
+            playsinline & webkit-playsinline: 防止 iOS 微信或 Safari 自动全屏弹出播放
+        -->
+        <video controls autoplay loop playsinline webkit-playsinline>
+            <source src="77memory.mp4" type="video/mp4">
+            您的浏览器不支持 HTML5 视频播放。
+        </video>
+        
+        <!-- 这里可以改成你喜欢的任意句子、名字或纪念日 -->
+        <div class="subtitle">Tired of my emotions.</div>
+    </div>
+
+</body>
+</html>
