@@ -3,99 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Our Memory</title>
+    <title>Our Memory ✨</title>
     <style>
+        /* 基础重置 */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
+        /* 网页背景：换成超温柔的星空粉蓝渐变暗调，治愈又可爱 */
         body {
-            background-color: #0b1528; 
+            background: linear-gradient(135deg, #121b2d 0%, #1a1c3a 50%, #2a1b35 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 20px;
         }
 
-        /* 核心容器：用于处理旋转逻辑 */
-        .main-container {
+        /* 可爱风拍立得容器 */
+        .card-container {
             width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            max-width: 360px; /* 紧凑的精致小卡片尺寸 */
+            background: rgba(255, 255, 255, 0.07);
+            padding: 16px 16px 20px 16px;
+            border-radius: 28px; /* 极其圆润的可爱大圆角 */
+            border: 2px solid rgba(255, 192, 203, 0.2); /* 淡淡的粉色边框 */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 
+                        0 0 15px rgba(165, 195, 243, 0.2); /* 柔和的发光 */
+            backdrop-filter: blur(12px);
+            animation: float 4s ease-in-out infinite; /* 让卡片微微上下浮动，像云朵一样 */
         }
 
-        /* 视频样式 */
-        video {
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+        /* 视频外层再加一层双边框，制造贴纸/相框的精致感 */
+        .video-box {
+            width: 100%;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             background: #000;
         }
 
-        /* --- 竖屏模式下的样式（强制横屏核心） --- */
-        @media screen and (orientation: portrait) {
-            video {
-                /* 竖屏时，将视频逆时针旋转90度，使其横过来 */
-                transform: rotate(90deg);
-                /* 这里的宽度和高度需要对调计算，确保横过来后能撑满屏幕高度 */
-                width: 100vh; 
-                height: 100vw;
-                object-fit: contain; 
-            }
-            
-            /* 竖屏时的文字提示（也会跟着旋转） */
-            .tip-text {
-                position: absolute;
-                color: rgba(121, 159, 203, 0.6);
-                font-size: 12px;
-                letter-spacing: 2px;
-                transform: rotate(90deg);
-                bottom: 20px;
-                white-space: nowrap;
-            }
+        video {
+            width: 100%;
+            display: block;
+            object-fit: cover;
         }
 
-        /* --- 横屏模式下的样式（当用户真的横放手机时） --- */
-        @media screen and (orientation: landscape) {
-            video {
-                transform: none;
-                width: 100vw;
-                height: 100vh;
-                object-fit: contain;
-            }
-            .tip-text {
-                display: none; /* 横屏时隐藏提示 */
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="main-container">
-        <video id="myVideo" autoplay loop muted playsinline webkit-playsinline>
-            <source src="77memory.mp4" type="video/mp4">
-            您的浏览器不支持 HTML5 视频播放。
-        </video>
-        
-        <div class="tip-text">Tired of my emotions. 🔄 建议横屏观看</div>
-    </div>
-
-    <script>
-        // 这是一个贴心的优化小脚本：
-        // 虽然系统强制静音了才能自动播放，但只要用户在页面上任意地方点一下，就自动开启声音
-        document.addEventListener('click', function() {
-            var video = document.getElementById('myVideo');
-            if (video.muted) {
-                video.muted = false; // 解除静音
-            }
-        }, { once: true }); // 只触发一次
-    </script>
-
-</body>
-</html>
+        /* 下方的萌系文字区域 */
+        .footer-text {
+            margin-top: 16px;
+            text-
