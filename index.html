@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Our Memory ✨</title>
     <style>
-        /* 基础重置 */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        /* 网页背景：超温柔的星空粉蓝渐变暗调 */
         body {
             background: linear-gradient(135deg, #121b2d 0%, #1a1c3a 50%, #2a1b35 100%);
             display: flex;
@@ -21,23 +19,22 @@
             min-height: 100vh;
             flex-direction: column;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden; /* 彻底禁止上下滑动 */
+            overflow: hidden; 
             padding: 20px;
             position: relative;
         }
 
-        /* --- 闪动爱心背景区域 --- */
+        /* --- 闪动爱心背景 --- */
         .heart-bg {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 不阻挡点击事件 */
+            pointer-events: none; 
             z-index: 1;
         }
 
-        /* 爱心样式与闪烁动画 */
         .heart {
             position: absolute;
             color: rgba(255, 192, 203, 0.25);
@@ -49,28 +46,26 @@
             50% { opacity: 0.9; transform: scale(1.2); text-shadow: 0 0 10px rgba(255,192,203,0.5); }
         }
 
-        /* 可爱风拍立得容器 */
+        /* 拍立得容器 */
         .card-container {
             width: 100%;
-            max-width: 360px; /* 紧凑的精致小卡片尺寸 */
+            max-width: 360px;
             background: rgba(255, 255, 255, 0.07);
             padding: 16px 16px 20px 16px;
-            border-radius: 28px; /* 极其圆润的可爱大圆角 */
-            border: 2px solid rgba(255, 192, 203, 0.2); /* 淡淡的粉色边框 */
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 
-                        0 0 15px rgba(165, 195, 243, 0.2); /* 柔和的发光 */
+            border-radius: 28px;
+            border: 2px solid rgba(255, 192, 203, 0.2);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 15px rgba(165, 195, 243, 0.2);
             backdrop-filter: blur(12px);
-            animation: float 4s ease-in-out infinite; /* 让卡片微微上下浮动 */
+            animation: float 4s ease-in-out infinite;
             z-index: 2;
+            cursor: pointer; /* 鼠标放上去显示可点击的手势 */
         }
 
-        /* 卡片上下浮动的治愈系动画 */
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-8px); }
         }
 
-        /* 视频外层再加一层双边框，制造相框的精致感 */
         .video-box {
             width: 100%;
             border-radius: 18px;
@@ -85,13 +80,11 @@
             object-fit: cover;
         }
 
-        /* 下方的萌系文字区域 */
         .footer-text {
             margin-top: 16px;
             text-align: center;
         }
 
-        /* 主标题 */
         .main-title {
             color: #ffccd5;
             font-size: 16px;
@@ -101,7 +94,6 @@
             text-shadow: 0 0 8px rgba(255, 204, 213, 0.6);
         }
 
-        /* 副标题：复刻视频文案 */
         .subtitle {
             color: #a5c3f3;
             font-size: 12px;
@@ -110,7 +102,7 @@
             opacity: 0.8;
         }
 
-        /* 悬浮提示小气泡 */
+        /* 提示气泡 */
         .audio-tip {
             margin-top: 20px;
             background: rgba(255, 255, 255, 0.1);
@@ -124,7 +116,6 @@
             z-index: 2;
         }
 
-        /* 提示文字呼吸灯动画 */
         @keyframes pulse {
             0%, 100% { opacity: 0.4; }
             50% { opacity: 0.8; }
@@ -144,7 +135,7 @@
 
     <div class="card-container">
         <div class="video-box">
-            <video id="myVideo" autoplay loop muted playsinline webkit-playsinline>
+            <video id="myVideo" loop playsinline webkit-playsinline preload="auto">
                 <source src="77memory.mp4" type="video/mp4">
                 您的浏览器不支持 HTML5 视频播放。
             </video>
@@ -160,21 +151,37 @@
         <source src="backmusic.mp3" type="audio/mpeg">
     </audio>
 
-    <div class="audio-tip">🎵 戳一戳屏幕，唤醒背景音乐</div>
+    <div class="audio-tip">✨ 轻点屏幕开始播放</div>
 
     <script>
-        // 点击屏幕任何地方，立刻激活背景音乐
+        var video = document.getElementById('myVideo');
+        var music = document.getElementById('bgMusic');
+
+        // 【核心逻辑 1】当网页加载好时，让视频画面静止在最后一秒
+        video.addEventListener('loadedmetadata', function() {
+            // 将当前播放时间设置为视频的总时长（即最后一秒）
+            video.currentTime = video.duration - 0.1; 
+        });
+
+        // 如果浏览器已经缓存好了，直接跳到最后一秒
+        if (video.readyState >= 1) {
+            video.currentTime = video.duration - 0.1;
+        }
+
+        // 【核心逻辑 2】点击屏幕任何地方，视频和音频同时从头开始播放
         document.addEventListener('click', function() {
-            var music = document.getElementById('bgMusic');
-            if (music.paused) {
-                music.play().catch(function(error) {
-                    console.log("音乐播放失败:", error);
-                });
-            }
-            // 成功播放后，隐藏提示气泡
+            // 视频重置到第 0 秒并播放
+            video.currentTime = 0;
+            video.play().catch(function(e){ console.log("视频播放失败:", e) });
+
+            // 音频重置到第 0 秒并播放
+            music.currentTime = 0;
+            music.play().catch(function(e){ console.log("音频播放失败:", e) });
+            
+            // 隐藏提示气泡
             var tip = document.querySelector('.audio-tip');
             if(tip) tip.style.display = 'none';
-        }, { once: true });
+        }, { once: true }); // 只触发一次点击
     </script>
 
 </body>
