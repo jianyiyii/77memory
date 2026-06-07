@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Our Memory ✨</title>
+    <title>Happy Birthday!🎂</title>
     <style>
         /* 基础重置 */
         * {
@@ -190,7 +190,7 @@
             cursor: pointer;
         }
 
-        /* 真实文字包装层（添加真实高斯模糊滤镜，点开前一个字都看不清） */
+        /* 真实文字层，真正的底层高斯模糊 */
         .tab-content-wrapper {
             position: absolute;
             top: 0;
@@ -202,12 +202,13 @@
             display: flex;
             align-items: flex-start;
             justify-content: flex-start;
+            z-index: 5;
             
-            /* 默认高斯模糊（马赛克）状态 */
-            filter: blur(15px);
-            -webkit-filter: blur(15px);
+            /* 初始彻底高斯模糊状态 */
+            filter: blur(20px);
+            -webkit-filter: blur(20px);
             
-            /* 关键：中心扩散清晰的中心渐变效果 */
+            /* 中心扩散清晰的遮罩处理 */
             mask-image: radial-gradient(circle, black 0%, black 0%);
             -webkit-mask-image: radial-gradient(circle, black 0%, black 0%);
             mask-size: 300% 300%;
@@ -215,13 +216,13 @@
             mask-position: center;
             -webkit-mask-position: center;
 
-            transition: filter 0.8s ease, -webkit-filter 0.8s ease, mask-image 0.8s ease, -webkit-mask-image 0.8s ease;
+            transition: filter 0.8s ease, -webkit-filter 0.8s ease;
         }
 
-        /* 触发解锁后：消除模糊，并由中心向两边消散清晰 */
+        /* 解锁后消除模糊 */
         .tab-content-wrapper.unlocked {
-            filter: blur(0px);
-            -webkit-filter: blur(0px);
+            filter: blur(0px) !important;
+            -webkit-filter: blur(0px) !important;
         }
 
         .tab-panel {
@@ -235,29 +236,33 @@
         }
         .tab-panel.active { display: block; }
 
-        /* 浮在模糊文字正上方的提示遮罩层 */
+        /* 浮在模糊文字之上的独立提示文本容器层（高于内容层） */
         .mosaic-text-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10;
+            z-index: 15; /* 确保层级高于模糊文本，防止无法遮挡 */
             display: flex;
             justify-content: center;
             align-items: center;
-            pointer-events: none; /* 让点击能直接穿透到容器上 */
-            transition: opacity 0.4s ease;
+            pointer-events: none; 
+            padding: 15px;
+            text-align: center;
         }
 
         .mosaic-tip {
+            display: none; /* 默认全部隐藏 */
             color: #ffccd5;
             font-size: 13px;
             font-weight: bold;
             letter-spacing: 2px;
-            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            text-shadow: 0 0 8px rgba(0,0,0,0.9);
             animation: pulse 2s infinite;
+            transition: opacity 0.4s ease;
         }
+        .mosaic-tip.active { display: block; }
 
         .back-btn {
             margin-top: 20px;
@@ -290,14 +295,14 @@
                 </video>
             </div>
             <div class="footer-text">
-                <div class="main-title"> Our Memory 🤍 </div>
-                <div class="subtitle">Tired of my emotions.</div>
+                <div class="main-title"> Happy Birthday!🎂 </div>
+                <div class="subtitle">11 to 77 🤍</div>
             </div>
         </div>
         
-        <div class="audio-tip">✨ 轻点屏幕，开启魔法回忆</div>
+        <div class="audio-tip">✨ 轻点屏幕播放视频</div>
         
-        <button class="next-btn" id="to-text-btn">🪐 打开回忆图鉴</button>
+        <button class="next-btn" id="to-text-btn">🪐 打开生日礼物</button>
     </div>
 
     <div id="page-text">
@@ -320,7 +325,11 @@
                 </div>
 
                 <div class="mosaic-text-overlay" id="tip-overlay">
-                    <div class="mosaic-tip">✨ 戳这里，解锁隐藏秘密 ✨</div>
+                    <div class="mosaic-tip active" id="tip-1">🔒 拆开相识的第 1 个秘密</div>
+                    <div class="mosaic-tip" id="tip-2">🔒 悄悄刮开第 2 个故事</div>
+                    <div class="mosaic-tip" id="tip-3">🔒 触发第 3 颗星星的记忆</div>
+                    <div class="mosaic-tip" id="tip-4">🔒 打开第 4 份独家惊喜</div>
+                    <div class="mosaic-tip" id="tip-5">🔒 终点站：第 5 份终极浪漫</div>
                 </div>
             </div>
         </div>
@@ -340,9 +349,9 @@
         var tipOverlay = document.getElementById('tip-overlay');
         var hasInteracted = false;
         
-        // 核心骨架：用一个对象独立记录1-5分区的解锁状态。false代表未解锁，true代表已解锁
+        // 核心骨架：分别记录 1-5 分区各自独立的解锁情况，互不干扰
         var unlockedTabs = { 1: false, 2: false, 3: false, 4: false, 5: false };
-        var currentTab = 1; // 当前处于第几个分区
+        var currentTab = 1; 
 
         // 1. 初始化视频静止
         video.addEventListener('loadedmetadata', function() { video.currentTime = video.duration - 0.1; });
@@ -371,7 +380,7 @@
                 pageVideo.style.display = 'none'; pageText.style.display = 'flex';
                 setTimeout(function() { 
                     pageText.classList.add('active'); 
-                    updateTabVisualState(); // 每次进入文字页，根据状态刷新是否模糊
+                    updateTabVisualState(); 
                 }, 20);
             }, 600);
         });
@@ -386,47 +395,54 @@
 
         // 4. 1-5 分类导航点击切换
         function switchTab(tabIndex) {
-            currentTab = tabIndex; // 标记当前分区
+            currentTab = tabIndex; 
 
+            // 按钮高亮切
             var buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach(function(btn, index) {
                 if(index === (tabIndex - 1)) btn.classList.add('active'); else btn.classList.remove('active');
             });
 
+            // 内容显示切
             var panels = document.querySelectorAll('.tab-panel');
             panels.forEach(function(panel) {
                 if(panel.id === 'content-' + tabIndex) panel.classList.add('active'); else panel.classList.remove('active');
             });
 
-            // 核心切换：切换分区时，立刻更新该分区的独立模糊/清晰状态
+            // 提示词切
+            var tips = document.querySelectorAll('.mosaic-tip');
+            tips.forEach(function(tip) {
+                if(tip.id === 'tip-' + tabIndex) tip.classList.add('active'); else tip.classList.remove('active');
+            });
+
+            // 更新当前新分区的独立状态
             updateTabVisualState();
         }
 
-        // 5. 根据各个分区自己独立的解锁状态，控制文字模糊还是清晰
+        // 5. 状态同步：只对当前的分区做模糊/清晰的控制
         function updateTabVisualState() {
             if (unlockedTabs[currentTab]) {
-                // 如果当前分区之前已经被解开过：瞬间清晰，不展示提示词
+                // 如果这个分区点开过：立刻彻底清晰，不留任何痕迹
                 textWrapper.classList.add('unlocked');
                 tipOverlay.style.opacity = '0';
             } else {
-                // 如果当前分区之前没被解开过：保持高斯模糊，展示提示词
+                // 如果这个分区还没被解开：保持绝对模糊，露出它自己的提示词
                 textWrapper.classList.remove('unlocked');
                 tipOverlay.style.opacity = '1';
             }
         }
 
-        // 6. 点击文字区，触发由中心向两边散开清晰的解锁函数
+        // 6. 点击文字容器区，仅对当前分区激活散开清晰效果
         function unlockCurrentTab() {
-            // 如果本来就解锁了，点击不再重复触发动画
             if (unlockedTabs[currentTab]) return;
 
-            // 1. 隐藏文字提示词
+            // 渐隐当前提示词
             tipOverlay.style.opacity = '0'; 
             
-            // 2. 移除高斯模糊状态
+            // 模糊滤镜解除（中心向外清晰）
             textWrapper.classList.add('unlocked');
             
-            // 3. 将当前分区的状态永久改为 true（已解锁）
+            // 永久记录该单独分区解锁成功
             unlockedTabs[currentTab] = true; 
         }
     </script>
