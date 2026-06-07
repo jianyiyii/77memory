@@ -10,7 +10,6 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            /* 禁止手机端长按选择文字和弹出菜单，保证刮刮乐顺畅 */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
@@ -179,10 +178,10 @@
             box-shadow: 0 4px 10px rgba(255, 204, 213, 0.3);
         }
 
-        /* 核心：刮刮乐容器区 */
-        .scratch-container {
+        /* 文本卡片核心区域 */
+        .mosaic-container {
             width: 100%;
-            height: 200px; /* 固定高度确保排版统一 */
+            height: 200px;
             position: relative;
             background: rgba(0, 0, 0, 0.15);
             border-radius: 16px;
@@ -190,7 +189,6 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* 底层的真实文字 */
         .tab-content-wrapper {
             position: absolute;
             top: 0;
@@ -215,16 +213,53 @@
         }
         .tab-panel.active { display: block; }
 
-        /* 顶层的刮刮乐画布涂层 */
-        #scratch-canvas {
+        /* 马赛克/毛玻璃遮罩层 */
+        .mosaic-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background: rgba(40, 50, 70, 0.6);
+            /* 高斯模糊滤镜，做出高级马赛克质感 */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
-            touch-action: none; /* 防止手机上刮卡时导致页面乱滚 */
+            
+            /* 关键：中心扩散清晰的渐变遮罩定义 */
+            mask-image: radial-gradient(circle, transparent 0%, black 0%);
+            -webkit-mask-image: radial-gradient(circle, transparent 0%, black 0%);
+            mask-size: 300% 300%;
+            -webkit-mask-size: 300% 300%;
+            mask-position: center;
+            -webkit-mask-position: center;
+            
+            /* 动画过渡：平滑清晰、文字淡出 */
+            transition: backdrop-filter 0.8s ease, background-color 0.8s ease, opacity 0.8s ease;
+        }
+
+        /* 马赛克遮罩之上的提示文字 */
+        .mosaic-tip {
+            color: #ffccd5;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            transition: opacity 0.4s ease;
+            animation: pulse 2s infinite;
+        }
+
+        /* 当马赛克被解锁解锁后的类名控制（由内向外清晰） */
+        .mosaic-overlay.unlocked {
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+            background-color: rgba(0, 0, 0, 0);
+            opacity: 0;
+            pointer-events: none; /* 彻底消失不阻挡下方文字的手势 */
         }
 
         .back-btn {
@@ -278,7 +313,7 @@
                 <button class="tab-btn" onclick="switchTab(5)">5</button>
             </div>
 
-            <div class="scratch-container">
+            <div class="mosaic-container">
                 <div class="tab-content-wrapper">
                     <div class="tab-panel active" id="content-1">这是第一阶段的回忆文字。✨<br>相识的第一天，天气很好...</div>
                     <div class="tab-panel" id="content-2">这是第二阶段的回忆文字。🌙<br>我们一起去了想去的地方。</div>
@@ -286,7 +321,10 @@
                     <div class="tab-panel" id="content-4">这是第四阶段的回忆文字。🪐<br>那些深夜里聊过的秘密。</div>
                     <div class="tab-panel" id="content-5">这是第五阶段的回忆文字。❤️<br>未来的日子，我们还要一起走。</div>
                 </div>
-                <canvas id="scratch-canvas"></canvas>
+
+                <div class="mosaic-overlay" id="mosaic-layer" onclick="unlockMosaic()">
+                    <div class="mosaic-tip" id="mosaic-text">✨ 戳这里，解锁隐藏秘密 ✨</div>
+                </div>
             </div>
         </div>
 
@@ -302,14 +340,17 @@
         var music = document.getElementById('bgMusic');
         var nextBtn = document.getElementById('to-text-btn');
         var hasInteracted = false;
+        
+        // 全局变量：用于永久记录马赛克是否已经被解开过
+        var isUnlocked = false; 
 
-        // 1. 初始化视频静止
+        // 1. 初始化视频静止在最后一秒
         video.addEventListener('loadedmetadata', function() { video.currentTime = video.duration - 0.1; });
         if (video.readyState >= 1) { video.currentTime = video.duration - 0.1; }
 
-        // 2. 点击屏幕启动播放与按钮渐显
+        // 2. 点击屏幕同步启动音视频
         document.addEventListener('click', function(e) {
-            if(e.target.id === 'to-text-btn' || e.target.id === 'to-video-btn' || e.target.classList.contains('tab-btn') || e.target.id === 'scratch-canvas') return;
+            if(e.target.id === 'to-text-btn' || e.target.id === 'to-video-btn' || e.target.classList.contains('tab-btn') || e.target.id === 'mosaic-layer' || e.target.id === 'mosaic-text') return;
             if (!hasInteracted) {
                 video.currentTime = 0; video.play().catch(function(e){});
                 music.currentTime = 0; music.play().catch(function(e){});
@@ -322,6 +363,7 @@
         // 3. 页面切换逻辑
         var pageVideo = document.getElementById('page-video');
         var pageText = document.getElementById('page-text');
+        var mosaicLayer = document.getElementById('mosaic-layer');
 
         document.getElementById('to-text-btn').addEventListener('click', function(e) {
             e.stopPropagation(); 
@@ -330,7 +372,10 @@
                 pageVideo.style.display = 'none'; pageText.style.display = 'flex';
                 setTimeout(function() { 
                     pageText.classList.add('active'); 
-                    initScratch(); // 进入文字页时初始化刮刮乐
+                    // 【优化】：如果之前解开过，确保马赛克遮罩直接消失，不会重新盖上
+                    if(isUnlocked) {
+                        mosaicLayer.style.display = 'none';
+                    }
                 }, 20);
             }, 600);
         });
@@ -355,72 +400,28 @@
                 if(panel.id === 'content-' + tabIndex) panel.classList.add('active'); else panel.classList.remove('active');
             });
 
-            initScratch(); // 每次切分类时重置刮刮乐涂层
+            // 【优化】：切下一个文本时，如果之前点开过，马赛克绝不会再次盖回
+            if(isUnlocked) {
+                mosaicLayer.style.display = 'none';
+            }
         }
 
-        // 5. ─── 刮刮乐核心功能实现 ───
-        var canvas = document.getElementById('scratch-canvas');
-        var ctx = canvas.getContext('2d');
-        var isDrawing = false;
-
-        function initScratch() {
-            // 动态设置画布物理大小与容器一致
-            var container = canvas.parentNode;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-
-            // 绘制灰色可爱涂层
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = '#4a5568'; // 莫兰迪深灰涂层
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 在涂层上绘制提示文字
-            ctx.font = 'bold 14px sans-serif';
-            ctx.fillStyle = '#cbd5e1'; // 亮白字颜色
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+        // 5. ─── 马赛克由中心向外平滑解锁逻辑 ───
+        function unlockMosaic() {
+            var tipText = document.getElementById('mosaic-text');
+            tipText.style.opacity = '0'; // 提示文字瞬间淡出
             
-            // ✏️ 这里是涂层上的提示文字，你可以改成任意你想要的句子
-            ctx.fillText('✨ 动动手指刮开悄悄话 ✨', canvas.width / 2, canvas.height / 2);
-
-            // 设置擦除画笔的属性（圆形，半径24像素）
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.lineWidth = 48; 
+            // 触发高级毛玻璃和遮罩的过渡，向四周消散变清晰
+            mosaicLayer.classList.add('unlocked');
             
-            // 核心黑科技：将混合模式设为'destination-out'，画笔划过的地方会变透明
-            ctx.globalCompositeOperation = 'destination-out'; 
+            // 永久记录解锁状态
+            isUnlocked = true; 
+            
+            // 动画播放完毕（800毫秒）后，彻底把这个遮罩层删掉，不再阻挡后续操作
+            setTimeout(function() {
+                mosaicLayer.style.display = 'none';
+            }, 800);
         }
-
-        // 绑定刮卡的手机触摸与鼠标事件
-        function getEventPos(e) {
-            var rect = canvas.getBoundingClientRect();
-            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-
-        function scratchStart(e) { isDrawing = true; scratchMove(e); }
-        function scratchMove(e) {
-            if (!isDrawing) return;
-            e.preventDefault();
-            var pos = getEventPos(e);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-        }
-        function scratchEnd() { isDrawing = false; ctx.beginPath(); }
-
-        // 监听鼠标事件 (PC端测试用)
-        canvas.addEventListener('mousedown', scratchStart);
-        canvas.addEventListener('mousemove', scratchMove);
-        window.addEventListener('mouseup', scratchEnd);
-
-        // 监听触摸事件 (手机端核心)
-        canvas.addEventListener('touchstart', scratchStart);
-        canvas.addEventListener('touchmove', scratchMove);
-        window.addEventListener('touchend', scratchEnd);
     </script>
 
 </body>
