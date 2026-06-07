@@ -178,7 +178,7 @@
             box-shadow: 0 4px 10px rgba(255, 204, 213, 0.3);
         }
 
-        /* 文本卡片核心区域 */
+        /* 文本展示核心容器区 */
         .mosaic-container {
             width: 100%;
             height: 200px;
@@ -187,8 +187,10 @@
             border-radius: 16px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
         }
 
+        /* 真实文字包装层（添加真实高斯模糊滤镜，点开前一个字都看不清） */
         .tab-content-wrapper {
             position: absolute;
             top: 0;
@@ -200,6 +202,26 @@
             display: flex;
             align-items: flex-start;
             justify-content: flex-start;
+            
+            /* 默认高斯模糊（马赛克）状态 */
+            filter: blur(15px);
+            -webkit-filter: blur(15px);
+            
+            /* 关键：中心扩散清晰的中心渐变效果 */
+            mask-image: radial-gradient(circle, black 0%, black 0%);
+            -webkit-mask-image: radial-gradient(circle, black 0%, black 0%);
+            mask-size: 300% 300%;
+            -webkit-mask-size: 300% 300%;
+            mask-position: center;
+            -webkit-mask-position: center;
+
+            transition: filter 0.8s ease, -webkit-filter 0.8s ease, mask-image 0.8s ease, -webkit-mask-image 0.8s ease;
+        }
+
+        /* 触发解锁后：消除模糊，并由中心向两边消散清晰 */
+        .tab-content-wrapper.unlocked {
+            filter: blur(0px);
+            -webkit-filter: blur(0px);
         }
 
         .tab-panel {
@@ -213,53 +235,28 @@
         }
         .tab-panel.active { display: block; }
 
-        /* 马赛克/毛玻璃遮罩层 */
-        .mosaic-overlay {
+        /* 浮在模糊文字正上方的提示遮罩层 */
+        .mosaic-text-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(40, 50, 70, 0.6);
-            /* 高斯模糊滤镜，做出高级马赛克质感 */
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
             z-index: 10;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer;
-            
-            /* 关键：中心扩散清晰的渐变遮罩定义 */
-            mask-image: radial-gradient(circle, transparent 0%, black 0%);
-            -webkit-mask-image: radial-gradient(circle, transparent 0%, black 0%);
-            mask-size: 300% 300%;
-            -webkit-mask-size: 300% 300%;
-            mask-position: center;
-            -webkit-mask-position: center;
-            
-            /* 动画过渡：平滑清晰、文字淡出 */
-            transition: backdrop-filter 0.8s ease, background-color 0.8s ease, opacity 0.8s ease;
+            pointer-events: none; /* 让点击能直接穿透到容器上 */
+            transition: opacity 0.4s ease;
         }
 
-        /* 马赛克遮罩之上的提示文字 */
         .mosaic-tip {
             color: #ffccd5;
             font-size: 13px;
             font-weight: bold;
             letter-spacing: 2px;
-            text-shadow: 0 0 5px rgba(0,0,0,0.5);
-            transition: opacity 0.4s ease;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
             animation: pulse 2s infinite;
-        }
-
-        /* 当马赛克被解锁解锁后的类名控制（由内向外清晰） */
-        .mosaic-overlay.unlocked {
-            backdrop-filter: blur(0px);
-            -webkit-backdrop-filter: blur(0px);
-            background-color: rgba(0, 0, 0, 0);
-            opacity: 0;
-            pointer-events: none; /* 彻底消失不阻挡下方文字的手势 */
         }
 
         .back-btn {
@@ -313,8 +310,8 @@
                 <button class="tab-btn" onclick="switchTab(5)">5</button>
             </div>
 
-            <div class="mosaic-container">
-                <div class="tab-content-wrapper">
+            <div class="mosaic-container" onclick="unlockCurrentTab()">
+                <div class="tab-content-wrapper" id="text-wrapper">
                     <div class="tab-panel active" id="content-1">这是第一阶段的回忆文字。✨<br>相识的第一天，天气很好...</div>
                     <div class="tab-panel" id="content-2">这是第二阶段的回忆文字。🌙<br>我们一起去了想去的地方。</div>
                     <div class="tab-panel" id="content-3">这是第三阶段的回忆文字。🧸<br>谢谢你一直以来的包容。</div>
@@ -322,8 +319,8 @@
                     <div class="tab-panel" id="content-5">这是第五阶段的回忆文字。❤️<br>未来的日子，我们还要一起走。</div>
                 </div>
 
-                <div class="mosaic-overlay" id="mosaic-layer" onclick="unlockMosaic()">
-                    <div class="mosaic-tip" id="mosaic-text">✨ 戳这里，解锁隐藏秘密 ✨</div>
+                <div class="mosaic-text-overlay" id="tip-overlay">
+                    <div class="mosaic-tip">✨ 戳这里，解锁隐藏秘密 ✨</div>
                 </div>
             </div>
         </div>
@@ -339,18 +336,21 @@
         var video = document.getElementById('myVideo');
         var music = document.getElementById('bgMusic');
         var nextBtn = document.getElementById('to-text-btn');
+        var textWrapper = document.getElementById('text-wrapper');
+        var tipOverlay = document.getElementById('tip-overlay');
         var hasInteracted = false;
         
-        // 全局变量：用于永久记录马赛克是否已经被解开过
-        var isUnlocked = false; 
+        // 核心骨架：用一个对象独立记录1-5分区的解锁状态。false代表未解锁，true代表已解锁
+        var unlockedTabs = { 1: false, 2: false, 3: false, 4: false, 5: false };
+        var currentTab = 1; // 当前处于第几个分区
 
-        // 1. 初始化视频静止在最后一秒
+        // 1. 初始化视频静止
         video.addEventListener('loadedmetadata', function() { video.currentTime = video.duration - 0.1; });
         if (video.readyState >= 1) { video.currentTime = video.duration - 0.1; }
 
-        // 2. 点击屏幕同步启动音视频
+        // 2. 点击屏幕启动音视频
         document.addEventListener('click', function(e) {
-            if(e.target.id === 'to-text-btn' || e.target.id === 'to-video-btn' || e.target.classList.contains('tab-btn') || e.target.id === 'mosaic-layer' || e.target.id === 'mosaic-text') return;
+            if(e.target.id === 'to-text-btn' || e.target.id === 'to-video-btn' || e.target.classList.contains('tab-btn') || e.target.closest('.mosaic-container')) return;
             if (!hasInteracted) {
                 video.currentTime = 0; video.play().catch(function(e){});
                 music.currentTime = 0; music.play().catch(function(e){});
@@ -360,10 +360,9 @@
             }
         });
 
-        // 3. 页面切换逻辑
+        // 3. 页面切换
         var pageVideo = document.getElementById('page-video');
         var pageText = document.getElementById('page-text');
-        var mosaicLayer = document.getElementById('mosaic-layer');
 
         document.getElementById('to-text-btn').addEventListener('click', function(e) {
             e.stopPropagation(); 
@@ -372,10 +371,7 @@
                 pageVideo.style.display = 'none'; pageText.style.display = 'flex';
                 setTimeout(function() { 
                     pageText.classList.add('active'); 
-                    // 【优化】：如果之前解开过，确保马赛克遮罩直接消失，不会重新盖上
-                    if(isUnlocked) {
-                        mosaicLayer.style.display = 'none';
-                    }
+                    updateTabVisualState(); // 每次进入文字页，根据状态刷新是否模糊
                 }, 20);
             }, 600);
         });
@@ -388,8 +384,10 @@
             }, 600);
         });
 
-        // 4. 1-5 分类标签切换
+        // 4. 1-5 分类导航点击切换
         function switchTab(tabIndex) {
+            currentTab = tabIndex; // 标记当前分区
+
             var buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach(function(btn, index) {
                 if(index === (tabIndex - 1)) btn.classList.add('active'); else btn.classList.remove('active');
@@ -400,27 +398,36 @@
                 if(panel.id === 'content-' + tabIndex) panel.classList.add('active'); else panel.classList.remove('active');
             });
 
-            // 【优化】：切下一个文本时，如果之前点开过，马赛克绝不会再次盖回
-            if(isUnlocked) {
-                mosaicLayer.style.display = 'none';
+            // 核心切换：切换分区时，立刻更新该分区的独立模糊/清晰状态
+            updateTabVisualState();
+        }
+
+        // 5. 根据各个分区自己独立的解锁状态，控制文字模糊还是清晰
+        function updateTabVisualState() {
+            if (unlockedTabs[currentTab]) {
+                // 如果当前分区之前已经被解开过：瞬间清晰，不展示提示词
+                textWrapper.classList.add('unlocked');
+                tipOverlay.style.opacity = '0';
+            } else {
+                // 如果当前分区之前没被解开过：保持高斯模糊，展示提示词
+                textWrapper.classList.remove('unlocked');
+                tipOverlay.style.opacity = '1';
             }
         }
 
-        // 5. ─── 马赛克由中心向外平滑解锁逻辑 ───
-        function unlockMosaic() {
-            var tipText = document.getElementById('mosaic-text');
-            tipText.style.opacity = '0'; // 提示文字瞬间淡出
+        // 6. 点击文字区，触发由中心向两边散开清晰的解锁函数
+        function unlockCurrentTab() {
+            // 如果本来就解锁了，点击不再重复触发动画
+            if (unlockedTabs[currentTab]) return;
+
+            // 1. 隐藏文字提示词
+            tipOverlay.style.opacity = '0'; 
             
-            // 触发高级毛玻璃和遮罩的过渡，向四周消散变清晰
-            mosaicLayer.classList.add('unlocked');
+            // 2. 移除高斯模糊状态
+            textWrapper.classList.add('unlocked');
             
-            // 永久记录解锁状态
-            isUnlocked = true; 
-            
-            // 动画播放完毕（800毫秒）后，彻底把这个遮罩层删掉，不再阻挡后续操作
-            setTimeout(function() {
-                mosaicLayer.style.display = 'none';
-            }, 800);
+            // 3. 将当前分区的状态永久改为 true（已解锁）
+            unlockedTabs[currentTab] = true; 
         }
     </script>
 
